@@ -25,7 +25,7 @@ compile(AppInfo, State) ->
     %% check if non-recursive
     Recursive = proplists:get_value(recursive, GpbOpts0, true),
     SourceDirs = proplists:get_all_values(i, GpbOpts0),
-    download_proto_files(Urls),
+    download_proto_files(AppOutDir, Urls),
     TargetErlDir = filename:join([AppOutDir,
                                   proplists:get_value(o_erl, GpbOpts0,
                                                       ?DEFAULT_OUT_ERL_DIR)]),
@@ -95,16 +95,16 @@ clean(AppInfo, State) ->
 %% ===================================================================
 %% Private API
 %% ===================================================================
-download_proto_files([]) ->
+download_proto_files(_, []) ->
     ok;
-download_proto_files([{Url, Dest0} | R]) ->
+download_proto_files(AppOutDir, [{Url, Dest0} | R]) ->
    rebar_api:debug("Download proto file from url ~p to ~p", [Url, Dest0]),
-   Dest = filename:join(Dest0,filename:basename(Url)),
+   Dest = filename:join([AppOutDir, Dest0, filename:basename(Url)]),
    filelib:ensure_dir(Dest),
    SSLOpts = rebar_api:ssl_opts(Url),
    {ok, {_RC, _Header, Body}} = httpc:request(get, {Url, []},[{ssl, SSLOpts}], []),
    file:write_file(Dest, Body),
-   download_proto_files(R).
+   download_proto_files(AppOutDir, R).
 
 discover(AppDir, SourceDir, Opts) ->
     %% Convert simple extension to proper regex
